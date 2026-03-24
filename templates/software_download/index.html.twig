@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Software Download{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h2 class="card-title mb-3">Update Your CarPlay / Android Auto MMI</h2>
+                    <p class="text-muted">Enter your software and hardware version to download the correct firmware.</p>
+
+                    <form id="software-form" class="mt-4">
+                        <div class="mb-3 text-start">
+                            <label for="version" class="form-label">Software Version*</label>
+                            <input type="text" class="form-control" id="version" placeholder="e.g. 3.1.1.2.mmi.c" required>
+                        </div>
+
+                        <div class="mb-3 text-start">
+                            <label for="hwVersion" class="form-label">HW Version*</label>
+                            <input type="text" class="form-control" id="hwVersion" placeholder="e.g. B_C_1234.01.01" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Check Software</button>
+                    </form>
+
+                    <div id="result" class="mt-4"></div>
+
+                    <div class="alert alert-warning mt-4" role="alert">
+                        <strong>Warning:</strong> Uploading the wrong software version may brick your MMI. 
+                        Always double-check your versions. BimmerTech is not responsible for incorrect updates.
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="#" class="btn btn-outline-secondary">Back to Shop</a>
+                <p class="mt-3 text-muted small">
+                    BMW and MINI are registered trademarks of Bayerische Motoren Werke AG. 
+                    BimmerTech is not affiliated with BMW AG.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('software-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const version = document.getElementById('version').value.trim();
+    const hwVersion = document.getElementById('hwVersion').value.trim();
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+
+    try {
+        const formData = new FormData();
+        formData.append('version', version);
+        formData.append('hwVersion', hwVersion);
+
+        const response = await fetch('/api/software/version', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.versionExist) {
+            let linksHtml = '';
+            if (data.st) linksHtml += `<a href="${data.st}" target="_blank" class="btn btn-success me-2">ST Version</a>`;
+            if (data.gd) linksHtml += `<a href="${data.gd}" target="_blank" class="btn btn-success">GD Version</a>`;
+            resultDiv.innerHTML = `<div class="alert alert-success">${data.msg}<br>${linksHtml}</div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">${data.msg}</div>`;
+        }
+    } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = `<div class="alert alert-danger">Something went wrong. Please try again.</div>`;
+    }
+});
+</script>
+{% endblock %}
